@@ -3,7 +3,7 @@
      Commit Version: 1.5.0-0-g9aa0fdb  Build Version: 1.5.7004.21443
      For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
 <robot
-  name="mercury_urdf">
+  name="aragog_urdf">
   <link
     name="base_link">
     <inertial>
@@ -26,7 +26,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/base_link.STL" />
+          filename="package://aragog_urdf/meshes/base_link.STL" />
       </geometry>
       <material
         name="blue">
@@ -40,7 +40,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/base_link.STL" />
+          filename="package://aragog_urdf/meshes/base_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -66,7 +66,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/Front_module.STL" />
+          filename="package://aragog_urdf/meshes/Front_module.STL" />
       </geometry>
       <material
         name="">
@@ -80,7 +80,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/Front_module.STL" />
+          filename="package://aragog_urdf/meshes/Front_module.STL" />
       </geometry>
     </collision>
   </link>
@@ -126,7 +126,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/FLA.STL" />
+          filename="package://aragog_urdf/meshes/FLA.STL" />
       </geometry>
       <material
         name="">
@@ -140,7 +140,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/FLA.STL" />
+          filename="package://aragog_urdf/meshes/FLA.STL" />
       </geometry>
     </collision>
   </link>
@@ -186,7 +186,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/FLH.STL" />
+          filename="package://aragog_urdf/meshes/FLH.STL" />
       </geometry>
       <material
         name="">
@@ -200,7 +200,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/FLH.STL" />
+          filename="package://aragog_urdf/meshes/FLH.STL" />
       </geometry>
     </collision>
   </link>
@@ -246,7 +246,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/FLK.STL" />
+          filename="package://aragog_urdf/meshes/FLK.STL" />
       </geometry>
       <material
         name="">
@@ -260,7 +260,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/FLK.STL" />
+          filename="package://aragog_urdf/meshes/FLK.STL" />
       </geometry>
     </collision>
   </link>
@@ -306,7 +306,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/FRA.STL" />
+          filename="package://aragog_urdf/meshes/FRA.STL" />
       </geometry>
       <material
         name="">
@@ -320,7 +320,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/FRA.STL" />
+          filename="package://aragog_urdf/meshes/FRA.STL" />
       </geometry>
     </collision>
   </link>
@@ -366,7 +366,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/FRH.STL" />
+          filename="package://aragog_urdf/meshes/FRH.STL" />
       </geometry>
       <material
         name="">
@@ -380,7 +380,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/FRH.STL" />
+          filename="package://aragog_urdf/meshes/FRH.STL" />
       </geometry>
     </collision>
   </link>
@@ -426,7 +426,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/FRK.STL" />
+          filename="package://aragog_urdf/meshes/FRK.STL" />
       </geometry>
       <material
         name="">
@@ -440,7 +440,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/FRK.STL" />
+          filename="package://aragog_urdf/meshes/FRK.STL" />
       </geometry>
     </collision>
   </link>
@@ -486,7 +486,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/Back_module.STL" />
+          filename="package://aragog_urdf/meshes/Back_module.STL" />
       </geometry>
       <material
         name="">
@@ -500,7 +500,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/Back_module.STL" />
+          filename="package://aragog_urdf/meshes/Back_module.STL" />
       </geometry>
     </collision>
   </link>
@@ -546,7 +546,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/BLA.STL" />
+          filename="package://aragog_urdf/meshes/BLA.STL" />
       </geometry>
       <material
         name="">
@@ -560,7 +560,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/BLA.STL" />
+          filename="package://aragog_urdf/meshes/BLA.STL" />
       </geometry>
     </collision>
   </link>
@@ -606,7 +606,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/BLH.STL" />
+          filename="package://aragog_urdf/meshes/BLH.STL" />
       </geometry>
       <material
         name="">
@@ -620,7 +620,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/BLH.STL" />
+          filename="package://aragog_urdf/meshes/BLH.STL" />
       </geometry>
     </collision>
   </link>
@@ -666,7 +666,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/BLK.STL" />
+          filename="package://aragog_urdf/meshes/BLK.STL" />
       </geometry>
       <material
         name="">
@@ -680,7 +680,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/BLK.STL" />
+          filename="package://aragog_urdf/meshes/BLK.STL" />
       </geometry>
     </collision>
   </link>
@@ -726,7 +726,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/BRA.STL" />
+          filename="package://aragog_urdf/meshes/BRA.STL" />
       </geometry>
       <material
         name="">
@@ -740,7 +740,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/BRA.STL" />
+          filename="package://aragog_urdf/meshes/BRA.STL" />
       </geometry>
     </collision>
   </link>
@@ -786,7 +786,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/BRH.STL" />
+          filename="package://aragog_urdf/meshes/BRH.STL" />
       </geometry>
       <material
         name="">
@@ -800,7 +800,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/BRH.STL" />
+          filename="package://aragog_urdf/meshes/BRH.STL" />
       </geometry>
     </collision>
   </link>
@@ -846,7 +846,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/BRK.STL" />
+          filename="package://aragog_urdf/meshes/BRK.STL" />
       </geometry>
       <material
         name="">
@@ -860,7 +860,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://mercury_urdf/meshes/BRK.STL" />
+          filename="package://aragog_urdf/meshes/BRK.STL" />
       </geometry>
     </collision>
   </link>
