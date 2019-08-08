@@ -2,8 +2,9 @@
 """
 
 import os, inspect
+
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(os.path.dirname(currentdir))          #parent of parent dir
+parentdir = os.path.dirname(os.path.dirname(currentdir))  # parent of parent dir
 os.sys.path.insert(0, parentdir)
 
 import collections
@@ -13,7 +14,7 @@ import re
 import numpy as np
 import pybullet as p
 
-#from quadruped.Aragog.envs import motor        #motor model
+# from quadruped.Aragog.envs import motor        #motor model
 
 
 #::::::::::::::::::::Global Args:::::::::::::::::::::::#
@@ -23,211 +24,118 @@ INIT_RACK_POSITION = [0, 0, 1]
 
 class Aragog:
 
-  def __init__(self, urdfRootPath='', on_rack=False):
-    self.urdfRootPath = urdfRootPath
-    self.on_rack = on_rack
-    self.num_motors = 12                                                  # 8 Leg motors + 4 abduction motors
-    self.num_legs = 4
-    self.max_force = 3.5
-    self.kp = 1
-    self.kd = 0.1
-    self.chassis_link_ids = [-1]
-    self.leg_link_ids = []
-    self.motor_link_ids = []
-    self.motor_direction = [-1, -1, -1, -1, 1, 1, 1, 1]
-    self.foot_link_ids = []
+    def __init__(self, urdfRootPath='', on_rack=False):
+        self.urdfRootPath = urdfRootPath
+        self.on_rack = on_rack
+        self.num_motors = 14  # 8 Leg motors + 4 abduction motors + 2 FRONT and BACK module
+        self.num_legs = 4
+        self.max_force = 3.5
+        self.kp = 1
+        self.kd = 0.1
+
+        self.motor_direction = [1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, 1]
+        self.motor_angles = [0, 0, np.pi/2, np.pi/3, 0, np.pi/2, np.pi/3, 0, 0, np.pi/2, np.pi/3, 0, np.pi/2, np.pi/3]
+        self.motorIdList = []
+        self.reset()
+
+    def buildJointNameToIdDict(self):
+        nJoints = p.getNumJoints(self.quadruped)
+        self.jointNameToId = {}
+        for i in range(nJoints):
+            jointInfo = p.getJointInfo(self.quadruped, i)
+            self.jointNameToId[jointInfo[1].decode('UTF-8')] = jointInfo[0]
+
+    def buildJointNameToAngle(self):
+        nJoints = p.getNumJoints(self.quadruped)
+        self.jointNameToAngle = {}
+        for i in range(nJoints):
+            jointInfo = p.getJointInfo(self.quadruped, i)
+            self.jointNameToAngle[jointInfo[1].decode('UTF-8')] = self.motor_direction[i] * self.motor_angles[i]
+
+    def buildMotorIdList(self):
+        self.motorIdList.append(self.jointNameToId['FM_joint'])
+        self.motorIdList.append(self.jointNameToId['FLA_joint'])
+        self.motorIdList.append(self.jointNameToId['FLH_joint'])
+        self.motorIdList.append(self.jointNameToId['FLK_joint'])
+        self.motorIdList.append(self.jointNameToId['FRA_joint'])
+        self.motorIdList.append(self.jointNameToId['FRH_joint'])
+        self.motorIdList.append(self.jointNameToId['FRK_joint'])
+        self.motorIdList.append(self.jointNameToId['BM_joint'])
+        self.motorIdList.append(self.jointNameToId['BLA_joint'])
+        self.motorIdList.append(self.jointNameToId['BLH_joint'])
+        self.motorIdList.append(self.jointNameToId['BLK_joint'])
+        self.motorIdList.append(self.jointNameToId['BRA_joint'])
+        self.motorIdList.append(self.jointNameToId['BRH_joint'])
+        self.motorIdList.append(self.jointNameToId['BRK_joint'])
 
 
-    self.reset()
+    def reset(self):
+        if self.on_rack:
+            init_position = INIT_RACK_POSITION
+        else:
+            init_position = INIT_POSITION
 
-  def buildJointNameToIdDict(self):
-    nJoints = p.getNumJoints(self.quadruped)
-    self.jointNameToId = {}
-    for i in range(nJoints):
-      jointInfo = p.getJointInfo(self.quadruped, i)
-      self.jointNameToId[jointInfo[1].decode('UTF-8')] = jointInfo[0]
+        self.quadruped = p.loadURDF("%s/urdf/aragog.urdf" % self.urdfRootPath, init_position, useFixedBase=self.on_rack)
+        self.buildJointNameToIdDict()
+        self.buildJointNameToAngle()
+        self.buildMotorIdList()
+        self.resetPose()
+        for i in range(100):
+            p.stepSimulation()
 
-    self.resetPose()
-    for i in range(100):
-      p.stepSimulation()
+    def setMotorAngleById(self, motorId, desiredAngle):
+        p.setJointMotorControl2(bodyIndex=self.quadruped,
+                                jointIndex=motorId,
+                                controlMode=p.POSITION_CONTROL,
+                                targetPosition=desiredAngle,
+                                positionGain=self.kp,
+                                velocityGain=self.kd,
+                                force=self.max_force)
 
-  def buildMotorIdList(self):
-    self.motorIdList.append(self.jointNameToId['motor_front_leftL_joint'])
-    self.motorIdList.append(self.jointNameToId['motor_front_leftR_joint'])
-    self.motorIdList.append(self.jointNameToId['motor_back_leftL_joint'])
-    self.motorIdList.append(self.jointNameToId['motor_back_leftR_joint'])
-    self.motorIdList.append(self.jointNameToId['motor_front_rightL_joint'])
-    self.motorIdList.append(self.jointNameToId['motor_front_rightR_joint'])
-    self.motorIdList.append(self.jointNameToId['motor_back_rightL_joint'])
-    self.motorIdList.append(self.jointNameToId['motor_back_rightR_joint'])
+    def setMotorAngleByName(self, motorName, desiredAngle):
+        self.setMotorAngleById(self.jointNameToId[motorName], desiredAngle)
 
-  def reset(self):
-    if self.on_rack:
-      init_position = INIT_RACK_POSITION
-    else:
-      init_position = INIT_POSITION
+    def resetPose(self):
+        for jointName in self.jointNameToAngle:
+            p.resetJointState(self.quadruped, self.jointNameToId[jointName],
+                              self.jointNameToAngle[jointName])
+            self.setMotorAngleByName(jointName, self.jointNameToAngle[jointName])
 
-    self.quadruped = p.loadURDF("%s/urdf/aragog.urdf" % self.urdfRootPath,
-                                                        init_position,
-                                                        useFixedBase=self.on_rack)
-    self.kp = 1
-    self.kd = 0.1
-    self.maxForce = 3.5
-    self.nMotors = 8
-    self.motorIdList = []
-    self.buildJointNameToIdDict()
-    self.buildMotorIdList()
-
-  def setMotorAngleById(self, motorId, desiredAngle):
-    p.setJointMotorControl2(bodyIndex=self.quadruped,
-                            jointIndex=motorId,
-                            controlMode=p.POSITION_CONTROL,
-                            targetPosition=desiredAngle,
-                            positionGain=self.kp,
-                            velocityGain=self.kd,
-                            force=self.maxForce)
-
-  def setMotorAngleByName(self, motorName, desiredAngle):
-    self.setMotorAngleById(self.jointNameToId[motorName], desiredAngle)
-
-  def resetPose(self):
-    kneeFrictionForce = 0
-    halfpi = 1.57079632679
-    kneeangle = -2.1834  #halfpi - acos(upper_leg_length / lower_leg_length)
-
-    #left front leg
-    p.resetJointState(self.quadruped, self.jointNameToId['motor_front_leftL_joint'],
-                      self.motorDir[0] * halfpi)
-    p.resetJointState(self.quadruped, self.jointNameToId['knee_front_leftL_link'],
-                      self.motorDir[0] * kneeangle)
-    p.resetJointState(self.quadruped, self.jointNameToId['motor_front_leftR_joint'],
-                      self.motorDir[1] * halfpi)
-    p.resetJointState(self.quadruped, self.jointNameToId['knee_front_leftR_link'],
-                      self.motorDir[1] * kneeangle)
-    p.createConstraint(self.quadruped, self.jointNameToId['knee_front_leftR_link'], self.quadruped,
-                       self.jointNameToId['knee_front_leftL_link'], p.JOINT_POINT2POINT, [0, 0, 0],
-                       [0, 0.005, 0.2], [0, 0.01, 0.2])
-    self.setMotorAngleByName('motor_front_leftL_joint', self.motorDir[0] * halfpi)
-    self.setMotorAngleByName('motor_front_leftR_joint', self.motorDir[1] * halfpi)
-    p.setJointMotorControl2(bodyIndex=self.quadruped,
-                            jointIndex=self.jointNameToId['knee_front_leftL_link'],
-                            controlMode=p.VELOCITY_CONTROL,
-                            targetVelocity=0,
-                            force=kneeFrictionForce)
-    p.setJointMotorControl2(bodyIndex=self.quadruped,
-                            jointIndex=self.jointNameToId['knee_front_leftR_link'],
-                            controlMode=p.VELOCITY_CONTROL,
-                            targetVelocity=0,
-                            force=kneeFrictionForce)
-
-    #left back leg
-    p.resetJointState(self.quadruped, self.jointNameToId['motor_back_leftL_joint'],
-                      self.motorDir[2] * halfpi)
-    p.resetJointState(self.quadruped, self.jointNameToId['knee_back_leftL_link'],
-                      self.motorDir[2] * kneeangle)
-    p.resetJointState(self.quadruped, self.jointNameToId['motor_back_leftR_joint'],
-                      self.motorDir[3] * halfpi)
-    p.resetJointState(self.quadruped, self.jointNameToId['knee_back_leftR_link'],
-                      self.motorDir[3] * kneeangle)
-    p.createConstraint(self.quadruped, self.jointNameToId['knee_back_leftR_link'], self.quadruped,
-                       self.jointNameToId['knee_back_leftL_link'], p.JOINT_POINT2POINT, [0, 0, 0],
-                       [0, 0.005, 0.2], [0, 0.01, 0.2])
-    self.setMotorAngleByName('motor_back_leftL_joint', self.motorDir[2] * halfpi)
-    self.setMotorAngleByName('motor_back_leftR_joint', self.motorDir[3] * halfpi)
-    p.setJointMotorControl2(bodyIndex=self.quadruped,
-                            jointIndex=self.jointNameToId['knee_back_leftL_link'],
-                            controlMode=p.VELOCITY_CONTROL,
-                            targetVelocity=0,
-                            force=kneeFrictionForce)
-    p.setJointMotorControl2(bodyIndex=self.quadruped,
-                            jointIndex=self.jointNameToId['knee_back_leftR_link'],
-                            controlMode=p.VELOCITY_CONTROL,
-                            targetVelocity=0,
-                            force=kneeFrictionForce)
-
-    #right front leg
-    p.resetJointState(self.quadruped, self.jointNameToId['motor_front_rightL_joint'],
-                      self.motorDir[4] * halfpi)
-    p.resetJointState(self.quadruped, self.jointNameToId['knee_front_rightL_link'],
-                      self.motorDir[4] * kneeangle)
-    p.resetJointState(self.quadruped, self.jointNameToId['motor_front_rightR_joint'],
-                      self.motorDir[5] * halfpi)
-    p.resetJointState(self.quadruped, self.jointNameToId['knee_front_rightR_link'],
-                      self.motorDir[5] * kneeangle)
-    p.createConstraint(self.quadruped, self.jointNameToId['knee_front_rightR_link'],
-                       self.quadruped, self.jointNameToId['knee_front_rightL_link'],
-                       p.JOINT_POINT2POINT, [0, 0, 0], [0, 0.005, 0.2], [0, 0.01, 0.2])
-    self.setMotorAngleByName('motor_front_rightL_joint', self.motorDir[4] * halfpi)
-    self.setMotorAngleByName('motor_front_rightR_joint', self.motorDir[5] * halfpi)
-    p.setJointMotorControl2(bodyIndex=self.quadruped,
-                            jointIndex=self.jointNameToId['knee_front_rightL_link'],
-                            controlMode=p.VELOCITY_CONTROL,
-                            targetVelocity=0,
-                            force=kneeFrictionForce)
-    p.setJointMotorControl2(bodyIndex=self.quadruped,
-                            jointIndex=self.jointNameToId['knee_front_rightR_link'],
-                            controlMode=p.VELOCITY_CONTROL,
-                            targetVelocity=0,
-                            force=kneeFrictionForce)
-
-    #right back leg
-    p.resetJointState(self.quadruped, self.jointNameToId['motor_back_rightL_joint'],
-                      self.motorDir[6] * halfpi)
-    p.resetJointState(self.quadruped, self.jointNameToId['knee_back_rightL_link'],
-                      self.motorDir[6] * kneeangle)
-    p.resetJointState(self.quadruped, self.jointNameToId['motor_back_rightR_joint'],
-                      self.motorDir[7] * halfpi)
-    p.resetJointState(self.quadruped, self.jointNameToId['knee_back_rightR_link'],
-                      self.motorDir[7] * kneeangle)
-    p.createConstraint(self.quadruped, self.jointNameToId['knee_back_rightR_link'], self.quadruped,
-                       self.jointNameToId['knee_back_rightL_link'], p.JOINT_POINT2POINT, [0, 0, 0],
-                       [0, 0.005, 0.2], [0, 0.01, 0.2])
-    self.setMotorAngleByName('motor_back_rightL_joint', self.motorDir[6] * halfpi)
-    self.setMotorAngleByName('motor_back_rightR_joint', self.motorDir[7] * halfpi)
-    p.setJointMotorControl2(bodyIndex=self.quadruped,
-                            jointIndex=self.jointNameToId['knee_back_rightL_link'],
-                            controlMode=p.VELOCITY_CONTROL,
-                            targetVelocity=0,
-                            force=kneeFrictionForce)
-    p.setJointMotorControl2(bodyIndex=self.quadruped,
-                            jointIndex=self.jointNameToId['knee_back_rightR_link'],
-                            controlMode=p.VELOCITY_CONTROL,
-                            targetVelocity=0,
-                            force=kneeFrictionForce)
-
-  def getBasePosition(self):
-    position, orientation = p.getBasePositionAndOrientation(self.quadruped)
-    return position
-
-  def getBaseOrientation(self):
-    position, orientation = p.getBasePositionAndOrientation(self.quadruped)
-    return orientation
-
-  def applyAction(self, motorCommands):
-    motorCommandsWithDir = np.multiply(motorCommands, self.motorDir)
-    for i in range(self.nMotors):
-      self.setMotorAngleById(self.motorIdList[i], motorCommandsWithDir[i])
-
-  def getMotorAngles(self):
-    motorAngles = []
-    for i in range(self.nMotors):
-      jointState = p.getJointState(self.quadruped, self.motorIdList[i])
-      motorAngles.append(jointState[0])
-    motorAngles = np.multiply(motorAngles, self.motorDir)
-    return motorAngles
-
-  def getMotorVelocities(self):
-    motorVelocities = []
-    for i in range(self.nMotors):
-      jointState = p.getJointState(self.quadruped, self.motorIdList[i])
-      motorVelocities.append(jointState[1])
-    motorVelocities = np.multiply(motorVelocities, self.motorDir)
-    return motorVelocities
-
-  def getMotorTorques(self):
-    motorTorques = []
-    for i in range(self.nMotors):
-      jointState = p.getJointState(self.quadruped, self.motorIdList[i])
-      motorTorques.append(jointState[3])
-    motorTorques = np.multiply(motorTorques, self.motorDir)
-    return motorTorques
+    #
+    #
+    # def getBasePosition(self):
+    #     position, orientation = p.getBasePositionAndOrientation(self.quadruped)
+    #     return position
+    #
+    # def getBaseOrientation(self):
+    #     position, orientation = p.getBasePositionAndOrientation(self.quadruped)
+    #     return orientation
+    #
+    # def applyAction(self, motorCommands):
+    #     motorCommandsWithDir = np.multiply(motorCommands, self.motorDir)
+    #     for i in range(self.nMotors):
+    #         self.setMotorAngleById(self.motorIdList[i], motorCommandsWithDir[i])
+    #
+    # def getMotorAngles(self):
+    #     motorAngles = []
+    #     for i in range(self.nMotors):
+    #         jointState = p.getJointState(self.quadruped, self.motorIdList[i])
+    #         motorAngles.append(jointState[0])
+    #     motorAngles = np.multiply(motorAngles, self.motorDir)
+    #     return motorAngles
+    #
+    # def getMotorVelocities(self):
+    #     motorVelocities = []
+    #     for i in range(self.nMotors):
+    #         jointState = p.getJointState(self.quadruped, self.motorIdList[i])
+    #         motorVelocities.append(jointState[1])
+    #     motorVelocities = np.multiply(motorVelocities, self.motorDir)
+    #     return motorVelocities
+    #
+    # def getMotorTorques(self):
+    #     motorTorques = []
+    #     for i in range(self.nMotors):
+    #         jointState = p.getJointState(self.quadruped, self.motorIdList[i])
+    #         motorTorques.append(jointState[3])
+    #     motorTorques = np.multiply(motorTorques, self.motorDir)
+    #     return motorTorques
