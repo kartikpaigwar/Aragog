@@ -40,7 +40,6 @@ class Aragog:
         # self.motor_angles = [0, 0, np.pi/2, 0, 0, np.pi/2, 0, 0, 0, np.pi/2, 0, 0, np.pi/2, 0]
 
 
-
         self.reset()
 
     def buildJointNameToIdDict(self):
@@ -89,6 +88,7 @@ class Aragog:
         self.buildJointNameToAngle()
         self.buildMotorIdList()
         self.resetPose()
+        self.setCameraParam()
         for i in range(100):
             p.stepSimulation()
 
@@ -167,3 +167,38 @@ class Aragog:
         """
         for link_id in self.footlinkIdList:
             self.p.changeDynamics(self.quadruped, link_id, lateralFriction=foot_friction)
+
+
+    """ Camera """
+
+    def setCameraParam(self,fov=90, aspect=1.33, nearplane=0.01, farplane=100, width=640, height=480, camlink=0):
+        """ Camera Parameters """
+
+        self.projection_matrix = p.computeProjectionMatrixFOV(fov, aspect, nearplane, farplane)
+        self.imgWidth = width
+        self.imgHeight = height
+        self.cameralink = camlink     #front module
+
+    def getCameraOutput(self):
+
+        # Center of mass position and orientation (of link-7)
+        com_p, com_o, local_p, _, _, _ = p.getLinkState(self.quadruped, 0)
+        rot_matrix = p.getMatrixFromQuaternion(com_o)
+        rot_matrix = np.array(rot_matrix).reshape(3, 3)
+        # Initial vectors
+        init_camera_vector = (-1, 0, 0)  # z-axis
+        init_up_vector = (0, 0, 1)  # y-axis
+        # Rotated vectors
+        camera_vector = rot_matrix.dot(init_camera_vector)
+        up_vector = rot_matrix.dot(init_up_vector)
+        view_matrix = p.computeViewMatrix(com_p, com_p + 0.1 * camera_vector, up_vector)
+        out = p.getCameraImage(self.imgWidth, self.imgHeight, view_matrix, self.projection_matrix,
+                                                        renderer=p.ER_BULLET_HARDWARE_OPENGL,
+                                                        flags=p.ER_NO_SEGMENTATION_MASK
+                                                        )
+        width = out[0]
+        height = out[1]
+        rgbImg = out[2]
+        depthImg = out[3]
+
+        return width,height,rgbImg,depthImg

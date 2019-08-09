@@ -18,14 +18,16 @@ p.setAdditionalSearchPath(pybullet_data.getDataPath())  # optionally
 p.setGravity(0, 0, -10)
 planeId = p.loadURDF("plane.urdf")
 
-urdfRootPath = "/home/kartik/quadruped/Aragog/aragog_urdf"
+urdfRootPath = "/home/kartik/RBC/quadruped/Aragog/aragog_urdf"
 quad = aragog.Aragog(urdfRootPath)
 new_motorangles = quad.motor_angles
 for i in range(10000):
     p.stepSimulation()
-    new_motorangles = [x+1 for x in new_motorangles]
-    quad.applyAction(new_motorangles)
-    time.sleep(3. / 240.)
+    # new_motorangles = [x+1 for x in new_motorangles]
+    # quad.applyAction(new_motorangles)
+    # time.sleep(3. / 240.)
+    w,h,rgbimg,depthimg = quad.getCameraOutput()
+    print(depthimg)
 
 quadPos, quadOrn = p.getBasePositionAndOrientation(quad.quadruped)
 euang = p.getEulerFromQuaternion(quadOrn)
