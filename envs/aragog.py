@@ -35,10 +35,12 @@ class Aragog:
         self.kd = 0.1
 
         self.motor_direction = [1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, 1]
-        self.motor_angles = [0, 0, np.pi/1.2, np.pi/2, 0, np.pi/1.2, np.pi/2, 0, 0, np.pi/1.2, np.pi/2, 0, np.pi/1.2, np.pi/2]
+        self.motor_angles = [0, 0, np.pi / 1.2, np.pi / 2, 0, np.pi / 1.2, np.pi / 2, 0, 0, np.pi / 1.2, np.pi / 2, 0,
+                             np.pi / 1.2, np.pi / 2]
         # self.motor_angles = [0, 0, np.pi/2, 0, 0, np.pi/2, 0, 0, 0, np.pi/2, 0, 0, np.pi/2, 0]
 
-        self.motorIdList = []
+
+
         self.reset()
 
     def buildJointNameToIdDict(self):
@@ -56,6 +58,7 @@ class Aragog:
             self.jointNameToAngle[jointInfo[1].decode('UTF-8')] = self.motor_direction[i] * self.motor_angles[i]
 
     def buildMotorIdList(self):
+        self.motorIdList = []
         self.motorIdList.append(self.jointNameToId['FM_joint'])
         self.motorIdList.append(self.jointNameToId['FLA_joint'])
         self.motorIdList.append(self.jointNameToId['FLH_joint'])
@@ -70,6 +73,9 @@ class Aragog:
         self.motorIdList.append(self.jointNameToId['BRA_joint'])
         self.motorIdList.append(self.jointNameToId['BRH_joint'])
         self.motorIdList.append(self.jointNameToId['BRK_joint'])
+
+    def buildfootIdList(self):
+        self.footlinkIdList = [3, 6, 10, 13]
 
 
     def reset(self):
@@ -86,8 +92,6 @@ class Aragog:
         for i in range(100):
             p.stepSimulation()
 
-
-
     def setMotorAngleById(self, motorId, desiredAngle):
         p.setJointMotorControl2(bodyIndex=self.quadruped,
                                 jointIndex=motorId,
@@ -95,52 +99,71 @@ class Aragog:
                                 targetPosition=desiredAngle,
                                 positionGain=self.kp,
                                 velocityGain=self.kd,
-                                maxVelocity = self.max_vel,
+                                maxVelocity=self.max_vel,
                                 force=self.max_force)
+
+    def setAllMotorAngles(self, motoranglelist):
+        p.setJointMotorControlArray(bodyIndex=self.quadruped,
+                                    jointIndices=self.motorIdList,
+                                    controlMode=p.POSITION_CONTROL,
+                                    targetPositions=motoranglelist,
+                                    positionGains=[self.kp]*self.num_motors,
+                                    velocityGains=[self.kd]*self.num_motors,
+                                    # maxVelocities=[self.max_vel]*self.num_motors,
+                                    forces=[self.max_force]*self.num_motors)
 
     def setMotorAngleByName(self, motorName, desiredAngle):
         self.setMotorAngleById(self.jointNameToId[motorName], desiredAngle)
 
     def resetPose(self):
         for jointName in self.jointNameToAngle:
-            p.resetJointState(self.quadruped, self.jointNameToId[jointName],self.jointNameToAngle[jointName], targetVelocity=0)
+            p.resetJointState(self.quadruped, self.jointNameToId[jointName], self.jointNameToAngle[jointName],
+                              targetVelocity=0)
             self.setMotorAngleByName(jointName, self.jointNameToAngle[jointName])
 
-    #
-    #
-    # def getBasePosition(self):
-    #     position, orientation = p.getBasePositionAndOrientation(self.quadruped)
-    #     return position
-    #
-    # def getBaseOrientation(self):
-    #     position, orientation = p.getBasePositionAndOrientation(self.quadruped)
-    #     return orientation
-    #
-    # def applyAction(self, motorCommands):
-    #     motorCommandsWithDir = np.multiply(motorCommands, self.motorDir)
-    #     for i in range(self.nMotors):
-    #         self.setMotorAngleById(self.motorIdList[i], motorCommandsWithDir[i])
-    #
-    # def getMotorAngles(self):
-    #     motorAngles = []
-    #     for i in range(self.nMotors):
-    #         jointState = p.getJointState(self.quadruped, self.motorIdList[i])
-    #         motorAngles.append(jointState[0])
-    #     motorAngles = np.multiply(motorAngles, self.motorDir)
-    #     return motorAngles
-    #
-    # def getMotorVelocities(self):
-    #     motorVelocities = []
-    #     for i in range(self.nMotors):
-    #         jointState = p.getJointState(self.quadruped, self.motorIdList[i])
-    #         motorVelocities.append(jointState[1])
-    #     motorVelocities = np.multiply(motorVelocities, self.motorDir)
-    #     return motorVelocities
-    #
-    # def getMotorTorques(self):
-    #     motorTorques = []
-    #     for i in range(self.nMotors):
-    #         jointState = p.getJointState(self.quadruped, self.motorIdList[i])
-    #         motorTorques.append(jointState[3])
-    #     motorTorques = np.multiply(motorTorques, self.motorDir)
-    #     return motorTorques
+    def getBasePosition(self):
+        position, orientation = p.getBasePositionAndOrientation(self.quadruped)
+        return position
+
+    def getBaseOrientation(self):
+        position, orientation = p.getBasePositionAndOrientation(self.quadruped)
+        orientation = p.getEulerFromQuaternion(orientation)
+        return orientation
+
+    def applyAction(self, motorCommands):
+        motorCommandsWithDir = np.multiply(motorCommands, self.motor_direction)
+        for i in range(self.num_motors):
+            self.setMotorAngleById(self.motorIdList[i], motorCommandsWithDir[i])
+        # self.setAllMotorAngles(motorCommandsWithDir)
+
+    def getMotorAngles(self):
+        motorAngles = []
+        for i in range(self.num_motors):
+            jointState = p.getJointState(self.quadruped, self.motorIdList[i])
+            motorAngles.append(jointState[0])
+        # motorAngles = np.multiply(motorAngles, self.motorDir)
+        return motorAngles
+
+    def getMotorVelocities(self):
+        motorVelocities = []
+        for i in range(self.num_motors):
+            jointState = p.getJointState(self.quadruped, self.motorIdList[i])
+            motorVelocities.append(jointState[1])
+        # motorVelocities = np.multiply(motorVelocities, self.motorDir)
+        return motorVelocities
+
+    def getMotorTorques(self):
+        motorTorques = []
+        for i in range(self.num_motors):
+            jointState = p.getJointState(self.quadruped, self.motorIdList[i])
+            motorTorques.append(jointState[3])
+        # motorTorques = np.multiply(motorTorques, self.motorDir)
+        return motorTorques
+
+    def SetFootFriction(self, foot_friction):
+        """Set the lateral friction of the feet.
+        Args: foot_friction: The lateral friction coefficient of the foot. This value is
+        shared by all four feet.
+        """
+        for link_id in self.footlinkIdList:
+            self.p.changeDynamics(self.quadruped, link_id, lateralFriction=foot_friction)
