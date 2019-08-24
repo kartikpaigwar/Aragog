@@ -4,8 +4,8 @@
 import os, inspect
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(os.path.dirname(currentdir))  # parent of parent dir
-os.sys.path.insert(0, parentdir)
+parentdir = os.path.dirname(currentdir)  # parent dir
+# os.sys.path.insert(0, parentdir)
 
 import collections
 import copy
@@ -20,27 +20,28 @@ import pybullet as p
 #::::::::::::::::::::Global Args:::::::::::::::::::::::#
 INIT_POSITION = [0, 0, 0.5]
 INIT_RACK_POSITION = [0, 0, 1]
-
+init_motor_direction = [1]*14
+init_motor_angles = [0, 0, -np.pi / 6, -np.pi / 2, 0, -np.pi / 6, -np.pi / 2, 0, 0, -np.pi / 6, -np.pi / 2, 0,
+                     -np.pi / 6, -np.pi / 2]
+urdf_root_path = os.path.join(parentdir + "/aragog_urdf")
 
 class Aragog:
 
-    def __init__(self, urdfRootPath='', on_rack=False):
+    def __init__(self, urdfRootPath=urdf_root_path, on_rack=False):
+
         self.urdfRootPath = urdfRootPath
         self.on_rack = on_rack
         self.num_motors = 14  # 8 Leg motors + 4 abduction motors + 2 FRONT and BACK module
         self.num_legs = 4
+        self.leg_links_length = [0.15, 0.225]
         self.max_force = 10
         self.max_vel = 4
         self.kp = 2
         self.kd = 0.1
 
-        self.motor_direction = [1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, 1]
-        self.motor_angles = [0, 0, np.pi / 1.2, np.pi / 2, 0, np.pi / 1.2, np.pi / 2, 0, 0, np.pi / 1.2, np.pi / 2, 0,
-                             np.pi / 1.2, np.pi / 2]
-        # self.motor_angles = [0, 0, np.pi/2, 0, 0, np.pi/2, 0, 0, 0, np.pi/2, 0, 0, np.pi/2, 0]
+        self.motor_angles = init_motor_angles
+        self.motor_direction = init_motor_direction
 
-
-        self.reset()
 
     def buildJointNameToIdDict(self):
         nJoints = p.getNumJoints(self.quadruped)
@@ -77,7 +78,9 @@ class Aragog:
         self.footlinkIdList = [3, 6, 10, 13]
 
 
-    def reset(self):
+    def reset(self, joint_angles):
+        self.motor_angles = joint_angles
+
         if self.on_rack:
             init_position = INIT_RACK_POSITION
         else:
@@ -186,8 +189,8 @@ class Aragog:
         rot_matrix = p.getMatrixFromQuaternion(com_o)
         rot_matrix = np.array(rot_matrix).reshape(3, 3)
         # Initial vectors
-        init_camera_vector = (-1, 0, 0)  # z-axis
-        init_up_vector = (0, 0, 1)  # y-axis
+        init_camera_vector = (-1, 0, 0)  # x-axis
+        init_up_vector = (0, 0, 1)  # z-axis
         # Rotated vectors
         camera_vector = rot_matrix.dot(init_camera_vector)
         up_vector = rot_matrix.dot(init_up_vector)

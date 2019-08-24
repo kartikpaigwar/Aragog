@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Aragog.iml" filepath="$PROJECT_DIR$/.idea/Aragog.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../bullet3-master/examples/pybullet/gym/pybullet_envs/minitaur/.idea/minitaur.iml" filepath="$PROJECT_DIR$/../../bullet3-master/examples/pybullet/gym/pybullet_envs/minitaur/.idea/minitaur.iml" />
     </modules>
   </component>
 </project>
