@@ -78,15 +78,20 @@ class Aragog:
         self.footlinkIdList = [3, 6, 10, 13]
 
 
-    def reset(self, joint_angles):
-        self.motor_angles = joint_angles
+    def reset(self, orientation= "Forward", joint_angles= init_motor_angles):
 
         if self.on_rack:
             init_position = INIT_RACK_POSITION
         else:
             init_position = INIT_POSITION
 
-        self.quadruped = p.loadURDF("%s/urdf/aragog.urdf" % self.urdfRootPath, init_position, useFixedBase=self.on_rack)
+        if orientation == "Forward":
+            base_orientation = [0,0,1,0]
+        elif orientation == "Reverse":
+            base_orientation = [1,0,0,0]
+
+        self.quadruped = p.loadURDF("%s/urdf/aragog.urdf" % self.urdfRootPath, init_position, baseOrientation=base_orientation, useFixedBase=self.on_rack)
+        self.motor_angles = joint_angles
         self.buildJointNameToIdDict()
         self.buildJointNameToAngle()
         self.buildMotorIdList()

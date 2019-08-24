@@ -13,9 +13,13 @@ planeId = p.loadURDF("plane.urdf")
 
 # urdf_root_path = os.path.join(dirpath + "/aragog_urdf")
 #
-quad = Aragog_morph('Spider_high')
+quad = Aragog_morph('Dog_O',"Reverse")
 new_motorangles = quad.motor_angles
+omega = 0  # operating frequency
+omega_t = 0  # Initiating target frequency
 for i in range(1000000):
+    keyspressed = p.getKeyboardEvents()
+
     p.stepSimulation()
     # new_motorangles = [x+1 for x in new_motorangles]
     # quad.applyAction(new_motorangles)

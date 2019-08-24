@@ -11,9 +11,10 @@ def from_minus_pi_to_pi(joint_angle):
     return joint_angle
 
 class Aragog_morph(Aragog):
-    def __init__(self, initial_config="Dog_Normal"):
+    def __init__(self, initial_config="Dog_Normal", initial_state = "Forward"):
         super().__init__()
         self.robot_morph = initial_config
+        self.robot_state = initial_state
         self.Keys, self.bodymorph_Keys = self.CreateKeyList()
         self.hip2foot_length = 0.25
         self.dog_configs = ['Dog_Normal', 'Dog_X', 'Dog_M', 'Dog_O']
@@ -102,7 +103,8 @@ class Aragog_morph(Aragog):
         return Body_config
 
     # ============================== Body configuration ======================================
-    def Body_config_solution(self, x = "Dog_Normal"):
+    def Body_config_solution(self, x = "Dog_Normal", body_state="Forward"):
+        print(x)
         if x == 'Dog_Normal':
             fac_solution = [1, 1, 1, 1, 0, 0]
             abd = [0, 0, 0, 0]
@@ -124,20 +126,31 @@ class Aragog_morph(Aragog):
         elif x == 'Tree_walker':
             fac_solution = [1, 1, 2, 2, 1.57, -1.57]
             abd = [0.1, -0.1, 0.1, -0.1]
+        else:
+            print("Sorry that configuration doesn't exist")
+
+        if body_state == "Reverse":
+            for i in range(4):
+                if fac_solution[i] == 1:
+                    fac_solution[i] = 2
+                elif fac_solution[i] == 2:
+                    fac_solution[i] = 1
 
         return fac_solution, abd
 
     # -------------------- Body configuration: Fall correction ----------------------------
-    def getZ_off(self, body_direction='Forward'):
-        if body_direction == 'Reverse':
+    def getZ_off(self, body_state='Forward'):
+        if body_state == 'Reverse':
             z_off = self.hip2foot_length
-        elif body_direction == 'Forward':
+        elif body_state == 'Forward':
             z_off = -1* self.hip2foot_length
         return z_off
 
     def reset_morphology(self):
-        config_solution, abd_off = self.Body_config_solution(self.robot_morph)
-        z_off = self.getZ_off()
+        robot_morph = self.robot_morph
+        robot_state = self.robot_state
+        config_solution, abd_off = self.Body_config_solution(robot_morph,robot_state)
+        z_off = self.getZ_off(robot_state)
         foot_pos = np.array([ [0, 0, z_off], [0, 0, z_off], [0, 0, z_off], [0, 0, z_off] ])
         joint_angles = [0]*14
         leg_joint_angles = [0]*12
@@ -165,7 +178,7 @@ class Aragog_morph(Aragog):
         joint_angles[1:7] = leg_joint_angles[0:6]
         joint_angles[7] = config_solution[5]
         joint_angles[8:14] = leg_joint_angles[6:12]
-        self.reset(joint_angles)
+        self.reset(robot_state,joint_angles)
 
 
 
