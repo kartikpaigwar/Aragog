@@ -2,7 +2,7 @@ import pybullet as p
 import time
 import pybullet_data
 import os
-from envs.aragog_morph import Aragog_morph
+from envs.AragogSimpleGaitsGenerator import Aragog_Gait_Generator
 
 dirpath = os.getcwd()
 
@@ -13,17 +13,18 @@ planeId = p.loadURDF("plane.urdf")
 
 # urdf_root_path = os.path.join(dirpath + "/aragog_urdf")
 #
-quad = Aragog_morph('Dog_O',"Reverse")
+quad = Aragog_Gait_Generator()
 new_motorangles = quad.motor_angles
 omega = 0  # operating frequency
 omega_t = 0  # Initiating target frequency
 for i in range(1000000):
     keyspressed = p.getKeyboardEvents()
-
+    quad.run_cycles(keyspressed)
+    print(quad.omega)
     p.stepSimulation()
     # new_motorangles = [x+1 for x in new_motorangles]
     # quad.applyAction(new_motorangles)
-    time.sleep(3. / 240.)
+    # time.sleep(1. / 240.)
     # w,h,rgbimg,depthimg = quad.getCameraOutput()
     # print(depthimg)
 

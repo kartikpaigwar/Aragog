@@ -66,45 +66,40 @@ class Aragog_morph(Aragog):
         body_morph_key_list.append(key_list[19])
         
         return key_list, body_morph_key_list
-            
 
-    def Body_configurarion(self, inputkeys, Body_morph):
 
-        if self.bodymorph_Keys[0] in inputkeys and self.Keys[self.bodymorph_Keys[0]] & p.KEY_WAS_TRIGGERED:
-            Body_config = 'Dog_Normal'
-        elif self.bodymorph_Keys[1] in inputkeys and self.Keys[self.bodymorph_Keys[1]] & p.KEY_WAS_TRIGGERED:
-            Body_config = 'Dog_X'
-        elif self.bodymorph_Keys[2] in inputkeys and self.Keys[self.bodymorph_Keys[2]] & p.KEY_WAS_TRIGGERED:
-            Body_config = 'Dog_O'
-        elif self.bodymorph_Keys[3] in inputkeys and self.Keys[self.bodymorph_Keys[3]] & p.KEY_WAS_TRIGGERED:
-            Body_config = 'Dog_M'
-        elif self.bodymorph_Keys[4] in inputkeys and self.Keys[self.bodymorph_Keys[4]] & p.KEY_WAS_TRIGGERED:
-            Body_config = 'Spider_low'
-        elif self.bodymorph_Keys[5] in inputkeys and self.Keys[self.bodymorph_Keys[5]] & p.KEY_WAS_TRIGGERED:
-            Body_config = 'Spider_high'
-        elif self.bodymorph_Keys[6] in inputkeys and self.Keys[self.bodymorph_Keys[6]] & p.KEY_WAS_TRIGGERED:
-            Body_config = 'Tree_walker'
-        elif self.bodymorph_Keys[7] in inputkeys and self.Keys[self.bodymorph_Keys[7]] & p.KEY_WAS_TRIGGERED:
-            Body_config = 'Roll'
-        else:
-            Body_config = Body_morph
+    def Body_configurarion(self, inputkeys):
 
-        return Body_config
+        if self.bodymorph_Keys[0] in inputkeys and inputkeys[self.bodymorph_Keys[0]] & p.KEY_WAS_TRIGGERED:
+            self.robot_morph = 'Dog_Normal'
+        elif self.bodymorph_Keys[1] in inputkeys and inputkeys[self.bodymorph_Keys[1]] & p.KEY_WAS_TRIGGERED:
+            self.robot_morph = 'Dog_X'
+        elif self.bodymorph_Keys[2] in inputkeys and inputkeys[self.bodymorph_Keys[2]] & p.KEY_WAS_TRIGGERED:
+            self.robot_morph = 'Dog_O'
+        elif self.bodymorph_Keys[3] in inputkeys and inputkeys[self.bodymorph_Keys[3]] & p.KEY_WAS_TRIGGERED:
+            self.robot_morph = 'Dog_M'
+        elif self.bodymorph_Keys[4] in inputkeys and inputkeys[self.bodymorph_Keys[4]] & p.KEY_WAS_TRIGGERED:
+            self.robot_morph = 'Spider_low'
+        elif self.bodymorph_Keys[5] in inputkeys and inputkeys[self.bodymorph_Keys[5]] & p.KEY_WAS_TRIGGERED:
+            self.robot_morph = 'Spider_high'
+        elif self.bodymorph_Keys[6] in inputkeys and inputkeys[self.bodymorph_Keys[6]] & p.KEY_WAS_TRIGGERED:
+            self.robot_morph = 'Tree_walker'
+        elif self.bodymorph_Keys[7] in inputkeys and inputkeys[self.bodymorph_Keys[7]] & p.KEY_WAS_TRIGGERED:
+            self.robot_morph = 'Roll'
 
-    def Body_Correction(self, inputkeys, Body_morph ='Forward'):
+        return self.robot_morph
 
-        if self.bodymorph_Keys[0] in inputkeys and self.Keys[self.bodymorph_Keys[0]] & p.KEY_WAS_TRIGGERED and Body_morph == 'Forward':
-            Body_config = 'Reverse'
-        elif self.bodymorph_Keys[0] in inputkeys and self.Keys[self.bodymorph_Keys[0]] & p.KEY_WAS_TRIGGERED and Body_morph == 'Reverse':
-            Body_config = 'Forward'
-        else:
-            Body_config = Body_morph
+    def Body_Correction(self, inputkeys):
 
-        return Body_config
+        if self.bodymorph_Keys[8] in inputkeys and inputkeys[self.bodymorph_Keys[8]] & p.KEY_WAS_TRIGGERED and self.robot_state == 'Forward':
+            self.robot_state = 'Reverse'
+        elif self.bodymorph_Keys[8] in inputkeys and inputkeys[self.bodymorph_Keys[8]] & p.KEY_WAS_TRIGGERED and self.robot_state == 'Reverse':
+            self.robot_state = 'Forward'
+
+        return self.robot_state
 
     # ============================== Body configuration ======================================
     def Body_config_solution(self, x = "Dog_Normal", body_state="Forward"):
-        print(x)
         if x == 'Dog_Normal':
             fac_solution = [1, 1, 1, 1, 0, 0]
             abd = [0, 0, 0, 0]
@@ -146,15 +141,10 @@ class Aragog_morph(Aragog):
             z_off = -1* self.hip2foot_length
         return z_off
 
-    def reset_morphology(self):
-        robot_morph = self.robot_morph
-        robot_state = self.robot_state
-        config_solution, abd_off = self.Body_config_solution(robot_morph,robot_state)
-        z_off = self.getZ_off(robot_state)
-        foot_pos = np.array([ [0, 0, z_off], [0, 0, z_off], [0, 0, z_off], [0, 0, z_off] ])
-        joint_angles = [0]*14
-        leg_joint_angles = [0]*12
-        abd_hip_knee_angles = [0]*4
+    def CalculateTargetJointAngles(self,config_solution,abd_off,foot_pos):
+        joint_angles = [0] * 14
+        leg_joint_angles = [0] * 12
+        abd_hip_knee_angles = [0] * 4
         for i in range(self.num_legs):
             if i < 2:
                 Spine_off = config_solution[4]
@@ -164,20 +154,30 @@ class Aragog_morph(Aragog):
                 foot_xoff = 0.1
 
             if self.robot_morph in self.dog_configs:
-                abd_hip_knee_angles[i]= akd.ik_3d(foot_pos[i], self.leg_links_length,config_solution[i])
+                abd_hip_knee_angles[i] = akd.ik_3d(foot_pos[i], self.leg_links_length, config_solution[i])
             elif self.robot_morph in self.spider_configs:
                 foot_pos[i][0] += foot_xoff
                 foot_pos[i][1] = abd_off[i]
-                abd_hip_knee_angles[i] = akd.ik_3d_spider(foot_pos[i],self.leg_links_length, config_solution[i])
+                abd_hip_knee_angles[i] = akd.ik_3d_spider(foot_pos[i], self.leg_links_length, config_solution[i])
 
-            leg_joint_angles[3*i] = from_minus_pi_to_pi(abd_hip_knee_angles[i][0])
-            leg_joint_angles[3*i+1] = from_minus_pi_to_pi(abd_hip_knee_angles[i][1]+Spine_off)
-            leg_joint_angles[3*i+2] = from_minus_pi_to_pi(abd_hip_knee_angles[i][2])
+            leg_joint_angles[3 * i] = from_minus_pi_to_pi(abd_hip_knee_angles[i][0])
+            leg_joint_angles[3 * i + 1] = from_minus_pi_to_pi(abd_hip_knee_angles[i][1] + Spine_off)
+            leg_joint_angles[3 * i + 2] = from_minus_pi_to_pi(abd_hip_knee_angles[i][2])
 
         joint_angles[0] = config_solution[4]
         joint_angles[1:7] = leg_joint_angles[0:6]
         joint_angles[7] = config_solution[5]
         joint_angles[8:14] = leg_joint_angles[6:12]
+
+        return joint_angles
+
+    def reset_morphology(self):
+        robot_morph = self.robot_morph
+        robot_state = self.robot_state
+        config_solution, abd_off = self.Body_config_solution(robot_morph,robot_state)
+        z_off = self.getZ_off(robot_state)
+        foot_pos = np.array([ [0, 0, z_off], [0, 0, z_off], [0, 0, z_off], [0, 0, z_off] ])
+        joint_angles = self.CalculateTargetJointAngles(config_solution,abd_off,foot_pos)
         self.reset(robot_state,joint_angles)
 
 

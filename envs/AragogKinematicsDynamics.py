@@ -99,9 +99,9 @@ def fk_3d(Joint_angles, l):
     R = [0] * 4
     # Forward kinematics
     # l = link lengths
-    abd = [Joint_angles[0], Joint_angles[3], Joint_angles[6], Joint_angles[9]]
-    hip = [Joint_angles[1], Joint_angles[4], Joint_angles[7], Joint_angles[10]]
-    knee = [Joint_angles[2], Joint_angles[5], Joint_angles[8], Joint_angles[11]]
+    abd = [Joint_angles[1], Joint_angles[4], Joint_angles[8], Joint_angles[11]]
+    hip = [Joint_angles[2], Joint_angles[5], Joint_angles[9], Joint_angles[12]]
+    knee = [Joint_angles[3], Joint_angles[6], Joint_angles[10], Joint_angles[13]]
 
     x = [0] * 3
     for i in range(4):
@@ -187,3 +187,82 @@ def ik_3d_spider(p1, l, Solution):
     Q = np.array([-alpha, theta, c_phi *  phi])
     # time.sleep(1000)
     return Q
+
+
+def RodriRot(P1, P2):
+    p1 = P1 / la.norm(P1, 2)
+    p2 = P2 / la.norm(P2, 2)
+    phi = np.arccos(np.dot(p1, p2))
+    v = np.cross(p1, p2)
+    vl = la.norm(v, 2)
+    if vl == 0:
+        w = v  # / la.norm(v, 2)
+    else:
+        w = v / la.norm(v, 2)
+    W = np.array([[0, w[2], -w[1]], [-w[2], 0, w[0]], [w[1], -w[0], 0]])
+    R = np.eye(3) + np.sin(phi) * W + (1 - np.cos(phi)) * np.dot(W, W)
+
+    return R
+
+#### ======================= Filter =================================================
+
+# Low pas filter
+def LowPassFilter(x0, dt, ud, xd, alpha):
+    alpha = 1.25
+    u  = ud + alpha*(xd - x0)
+    x = u * dt + x0
+    return x
+
+
+# %% --------------------------- Slope estimation ----------------------------------------
+
+def slope_estimator(F, rl):
+    alpha = 100
+    F_th = 0.5
+    C = np.zeros([4, 1])
+    for i in range(0, 4):
+        C[i] = 1 / (1 + np.exp(-0.00001 - alpha * (F[i] - F_th)))
+    Cs = np.sum(C)
+
+    if Cs == 0 or Cs == 1:
+        roll_grd = 0
+        pitch_grd = 0
+    elif Cs == 2:
+        j = 0
+        r = np.zeros([3, 2])
+        for i in range(0, 4):
+            if C[i] > 0.25:
+                r[:, j] = rl[:, i + 4]
+                j = j + 1
+        r1 = r[:, 1] - r[:, 0]
+        r2 = np.array([0, 0, 1])
+
+        P1 = np.cross(r1, r2)
+        P2 = np.array([0, 1, 0])
+
+        R = RodriRot(P1, P2)
+        roll_grd = 0
+        pitch_grd = np.arctan(R[0, 1] / R[0, 0])
+
+    elif Cs == 3:
+        j = 0
+        r = np.zeros([3, 3])
+        for i in range(0, 4):
+            if C[i] > 0.25:
+                r[:, j] = rl[:, i + 4]
+                j = j + 1
+
+        r1 = r[:, 0] - r[:, 2]
+        r2 = r[:, 1] - r[:, 2]
+
+        P1 = np.cross(r1, r2)
+        P2 = np.array([0, 1, 0])
+        R = np.array(RodriRot(P1, P2))
+        roll_grd = np.arctan(-R[1, 2] / R[2, 2])
+        pitch_grd = np.arctan(-R[0, 1] / R[0, 0])
+    else:
+        roll_grd = 0
+        pitch_grd = 0
+
+    return [roll_grd, -pitch_grd]
+    # the negetive value indicates actual ground ground elevation from the base of the slope

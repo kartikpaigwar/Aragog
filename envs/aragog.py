@@ -41,6 +41,7 @@ class Aragog:
 
         self.motor_angles = init_motor_angles
         self.motor_direction = init_motor_direction
+        self.buildfootIdList()
 
 
     def buildJointNameToIdDict(self):
@@ -174,7 +175,7 @@ class Aragog:
         shared by all four feet.
         """
         for link_id in self.footlinkIdList:
-            self.p.changeDynamics(self.quadruped, link_id, lateralFriction=foot_friction)
+            p.changeDynamics(self.quadruped, link_id, lateralFriction=foot_friction)
 
 
     """ Camera """
